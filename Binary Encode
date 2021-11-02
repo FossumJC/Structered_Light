@@ -1,0 +1,132 @@
+import cv2
+import numpy as np
+from PIL import Image
+
+"""
+This code is to create binary coded "images" (matrices) that can be projected with a standard projector (1920x1080).
+"""
+
+
+def divide_by_all_width(image_height, divisible_list):
+    """
+    This function takes a known image width divisible list and expands it out to be the correct width and height for
+    the given image. Example: Image is 20x20 (WxH) and 20's divisible list is (1, 2 4, 5, 10, 20) but we do not want
+    solid images so we can trim one index from both ends resulting in a divisible list of (2, 4, 5, 10).
+    :param image_height: The desired height of the final image.
+    :param divisible_list: A list of all the numbers the width of the image is divisible by minus "1" and the number
+    itself.
+    :return: None
+    """
+
+    for i in range(0, len(divisible_list)):
+        code_zeros = np.zeros(np.int64(divisible_list[i]))
+        code_ones = np.ones(np.int64(divisible_list[i])) * 255
+        code_combined = np.append(code_ones, code_zeros)
+        print("The current image image is " + str(i) + ", divisible list number is " + str(divisible_list[i]) + ", and it will be built to " + str(np.floor(divisible_list[(-1 - i)]/2)))
+        image_row = np.tile(code_combined, int(np.floor(divisible_list[(-1 - i)]/2)))
+        tracker = 0
+        while len(image_row) != divisible_list[-1]*divisible_list[0]:
+            if tracker == 1:
+                image_row = np.append(image_row, code_zeros)
+                tracker = 0
+            if tracker == 0:
+                image_row = np.append(image_row, code_ones)
+                tracker = 1
+        image_array = np.tile(image_row, (image_height, 1))
+        image = Image.fromarray(image_array.astype(np.uint8)).save('image %s.png' % i)
+
+
+def divide_by_all_height(image_width, divisible_list):
+    """
+    This function takes a known image width divisible list and expands it out to be the correct width and height for
+    the given image. Example: Image is 20x20 (WxH) and 20's divisible list is (1, 2 4, 5, 10, 20) but we do not want
+    solid images so we can trim one index from both ends resulting in a divisible list of (2, 4, 5, 10).
+    :param image_width: The desired width of the final image.
+    :param divisible_list: A list of all the numbers the width of the image is divisible by minus "1" and the number
+    itself.
+    :return: None
+    """
+
+    for i in range(0, len(divisible_list)):
+        code_zeros = np.zeros(np.int64(divisible_list[i]))
+        code_ones = np.ones(np.int64(divisible_list[i])) * 255
+        code_combined = np.append(code_ones, code_zeros)
+        print("The current image image is " + str(i) + ", divisible list number is " + str(divisible_list[i]) + ", and it will be built to " + str(np.floor(divisible_list[(-1 - i)]/2)))
+        image_rom = np.tile(code_combined, int(np.floor(divisible_list[(-1 - i)]/2)))
+        tracker = 0
+        while len(image_rom) != divisible_list[-1]*divisible_list[0]:
+            if tracker == 1:
+                image_rom = np.append(image_rom, code_zeros)
+                tracker = 0
+            if tracker == 0:
+                image_rom = np.append(image_rom, code_ones)
+                tracker = 1
+        image_column = image_rom[..., None]
+        image_array = np.tile(image_column, (1, image_width))
+        image = Image.fromarray(image_array.astype(np.uint8)).save('image_horizontal %s.png' % i)
+
+
+def divide_by_twos(image_width, image_height):
+    """
+    This function takes an image width and height and automatically creates images that are steps of the width divided
+    by 2 until the result is no longer 2 divisible.
+    :param image_width: The desired width of the image. Must be divisible by 2 at least once to get a non-solid image.
+    :param image_height: The desired height of the final image.
+    :return: None
+    """
+    binary_array = np.array([image_width])  # Create a numpy array of integers with the first one the width
+    length = len(binary_array)  # Get the length of the array
+
+    while binary_array[length-1] % 2 == 0:  # While there is no divisible remainder of the last element
+        hold = binary_array[length-1]/2
+        # Get the next value and store temp, binary coding divides each image line by two
+        print(hold)  # Display the value of hold for debug
+        binary_array = np.append(binary_array, hold)  # Append the new half value to the original array
+        length = len(binary_array)  # Get the new length of the array
+
+    binary_array = np.delete(binary_array, 0, 0)  # Delete the first value of the array as we do not want a blank image
+
+    for i in range(0, len(binary_array)):
+        code_zeros = np.zeros(np.int64(binary_array[i]))
+        code_ones = np.ones(np.int64(binary_array[i]))*255
+        code_combined = np.append(code_ones, code_zeros)
+        image_row = np.tile(code_combined, 2**i)
+        image_array = np.tile(image_row, (image_height, 1))
+        image = Image.fromarray(image_array.astype(np.uint8)).save('image %s.png' % i)
+
+
+def make_video(number_of_images, file_base_name, save_file_name):
+    """
+    This function takes the number of images and the base file name and creates a video of the images at 1 FPS.
+    Ex: 4 images and a base file name of "test" would look for the images "test 0.png", "test 1.png", ..., "test 3.png".
+    :param number_of_images: The number of image used to create the video.
+    :param file_base_name: The base name of the images to pull into the video saved as .png.
+    :param save_file_name: The name you wish to save the movie under.
+    :return: None
+    """
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    video = cv2.VideoWriter(save_file_name+'.avi', fourcc, 1, (width, height))
+
+    for j in range(0, number_of_images):
+        img = cv2.imread(file_base_name + ' %s.png' % j)
+        video.write(img)
+
+    cv2.destroyAllWindows()
+    video.release()
+
+
+width = 1920  # Set the desired image width
+height = 1080  # Set the desired image height
+
+# 1920 divisible list
+div_1920 = [2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 32, 40, 48, 60,
+            64, 80, 96, 120, 128, 160, 192, 240, 320, 384, 480, 640, 960]
+
+div_1080 = [2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 27, 30, 36, 40,
+            45, 54, 60, 72, 90, 108, 120, 135, 180, 216, 270, 360, 540]
+
+divide_by_all_width(height, div_1920)
+
+divide_by_all_height(width, div_1080)
+
+make_video(len(div_1080), 'image_horizontal', 'binary_code_horizontal')
