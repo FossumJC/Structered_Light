@@ -3,7 +3,7 @@ import numpy as np
 from PIL import Image
 
 """
-This code is to create binary coded "images" (matrices) that can be projected with a standard projector (1920x1080).
+This code is to create binary coded "images" (matrices) that can be projected with a standard projector.
 """
 
 
@@ -66,12 +66,13 @@ def divide_by_all_height(image_width, divisible_list):
         image = Image.fromarray(image_array.astype(np.uint8)).save('image_horizontal %s.png' % i)
 
 
-def divide_by_twos(image_width, image_height):
+def divide_by_twos(image_width, image_height, file_name):
     """
     This function takes an image width and height and automatically creates images that are steps of the width divided
     by 2 until the result is no longer 2 divisible.
     :param image_width: The desired width of the image. Must be divisible by 2 at least once to get a non-solid image.
     :param image_height: The desired height of the final image.
+    :param file_name: The file name to be indexed while saving.
     :return: None
     """
     binary_array = np.array([image_width])  # Create a numpy array of integers with the first one the width
@@ -92,7 +93,9 @@ def divide_by_twos(image_width, image_height):
         code_combined = np.append(code_ones, code_zeros)
         image_row = np.tile(code_combined, 2**i)
         image_array = np.tile(image_row, (image_height, 1))
-        image = Image.fromarray(image_array.astype(np.uint8)).save('image %s.png' % i)
+        if file_name == "h":
+            image_array = cv2.rotate(image_array, cv2.cv2.ROTATE_90_CLOCKWISE)
+        image = Image.fromarray(image_array.astype(np.uint8)).save('%s %s.png' % (file_name, i))
 
 
 def make_video(number_of_images, file_base_name, save_file_name):
@@ -115,8 +118,8 @@ def make_video(number_of_images, file_base_name, save_file_name):
     video.release()
 
 
-width = 1920  # Set the desired image width
-height = 1080  # Set the desired image height
+width = 1024  # Set the desired image width
+height = 768  # Set the desired image height
 
 # 1920 divisible list
 div_1920 = [2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 32, 40, 48, 60,
@@ -125,8 +128,11 @@ div_1920 = [2, 3, 4, 5, 6, 8, 10, 12, 15, 16, 20, 24, 30, 32, 40, 48, 60,
 div_1080 = [2, 3, 4, 5, 6, 8, 9, 10, 12, 15, 18, 20, 24, 27, 30, 36, 40,
             45, 54, 60, 72, 90, 108, 120, 135, 180, 216, 270, 360, 540]
 
-divide_by_all_width(height, div_1920)
+# divide_by_all_width(height, div_1920)
 
-divide_by_all_height(width, div_1080)
+# divide_by_all_height(width, div_1080)
 
-make_video(len(div_1080), 'image_horizontal', 'binary_code_horizontal')
+# make_video(len(div_1080), 'image_horizontal', 'binary_code_horizontal')
+
+divide_by_twos(height, width, "h")
+divide_by_twos(width, height, "v")
